@@ -6,7 +6,7 @@ import os, sys, re, time
 print("=" * 60)
 print("        PDF Ledger Split Automation Tool")
 print("        Developed by: Abhijit Das")
-print("        Contact: 91 - 9476378707")
+print("        Contact: +91 - 9476378707")
 print("        Email: one94community@gmail.com")
 print("=" * 60)
 print()
@@ -55,13 +55,12 @@ while attempts < MAX_ATTEMPTS:
     pwd = input("Enter password to continue: ").strip()
 
     if pwd == CORRECT_PASSWORD:
-        print("\033[0m\n✅ Password verified. Starting...\n")
+        print("\n✅ Password verified. Starting...\n")
         break
 
     attempts += 1
     remaining = MAX_ATTEMPTS - attempts
 
-    # 2nd wrong → DANGER MODE + CONTACT
     if remaining == 1:
         print("\033[41;97m")
         print("\n🚨🚨 DANGER MODE ACTIVATED 🚨🚨")
@@ -73,7 +72,6 @@ while attempts < MAX_ATTEMPTS:
         print("\n⚠️ ONE MORE WRONG ATTEMPT WILL DELETE THIS PROGRAM!")
         print("\033[0m")
 
-    # 3rd wrong → SELF DESTRUCT
     elif remaining == 0:
         print("\033[41;97m")
         print("\n💣 SECURITY BREACH DETECTED 💣")
@@ -81,14 +79,25 @@ while attempts < MAX_ATTEMPTS:
         print("\033[0m")
         time.sleep(2)
         self_destruct()
-
     else:
         print(f"❌ Wrong password. Attempts left: {remaining}")
 # ==================================================
 
+# ================== DIRECTORY CHECK =================
 INPUT_DIR = "INPUT_STATEMENT_PDF"
 OUTPUT_ROOT = "OUTPUT_SPLIT_PDF"
-os.makedirs(OUTPUT_ROOT, exist_ok=True)
+
+if not os.path.exists(INPUT_DIR):
+    os.makedirs(INPUT_DIR)
+    print(f"📂 Folder created: {INPUT_DIR}")
+    print("⚠️ Please put PDF files inside this folder and run again.")
+    input("Press Enter to exit...")
+    sys.exit()
+
+if not os.path.exists(OUTPUT_ROOT):
+    os.makedirs(OUTPUT_ROOT)
+    print(f"📂 Folder created: {OUTPUT_ROOT}")
+# ==================================================
 
 COMPANY_CODE_MAP = {
     "shyam steel industries ltd": "SSIL",
@@ -156,16 +165,16 @@ for pdf_file in os.listdir(INPUT_DIR):
 
     with pdfplumber.open(in_path) as pdf:
         texts = []
-        for i,p in enumerate(pdf.pages):
+        for i, p in enumerate(pdf.pages):
             t = p.extract_text()
             texts.append(t)
             if is_useless_page(t):
                 continue
             lines = [l.strip() for l in t.split("\n") if l.strip()]
-            for j,l in enumerate(lines):
-                if l.lower().startswith("to:") and j+1 < len(lines):
+            for j, l in enumerate(lines):
+                if l.lower().startswith("to:") and j + 1 < len(lines):
                     sections.append({
-                        "party": clean_party_name(lines[j+1]),
+                        "party": clean_party_name(lines[j + 1]),
                         "start": i
                     })
 
@@ -173,14 +182,14 @@ for pdf_file in os.listdir(INPUT_DIR):
         continue
 
     for i in range(len(sections)):
-        sections[i]["end"] = (sections[i+1]["start"]-1) if i+1<len(sections) else len(texts)-1
+        sections[i]["end"] = (sections[i+1]["start"] - 1) if i + 1 < len(sections) else len(texts) - 1
 
     reader = PdfReader(in_path)
     my = extract_month_year(pdf_file)
 
     for s in sections:
         w = PdfWriter()
-        for p in range(s["start"], s["end"]+1):
+        for p in range(s["start"], s["end"] + 1):
             if not is_useless_page(texts[p]):
                 w.add_page(reader.pages[p])
 
@@ -194,7 +203,7 @@ for pdf_file in os.listdir(INPUT_DIR):
         if os.path.exists(out):
             continue
 
-        with open(out,"wb") as f:
+        with open(out, "wb") as f:
             w.write(f)
 
         print(f"✔ Created: {base}/{fname}")
